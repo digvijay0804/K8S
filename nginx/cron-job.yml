@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup
+  namespace: nginx
+
+spec:
+  schedule: "*/2 * * * *"
+
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: backup
+
+        spec:
+          containers:
+          - name: cron-container
+            image: busybox
+
+            command:
+            - sh
+            - -c
+            - |
+              echo "Backup Started"
+              mkdir -p /backups
+              cp -r /demo-data/* /backups/
+              echo "Backup Completed"
+
+            volumeMounts:
+            - name: data-volume
+              mountPath: /demo-data
+
+            - name: backup-volume
+              mountPath: /backups
+
+          restartPolicy: OnFailure
+
+          volumes:
+          - name: data-volume
+            hostPath:
+              path: /demo_data
+              type: DirectoryOrCreate
+
+          - name: backup-volume
+            hostPath:
+              path: /backup
+              type: DirectoryOrCreate
